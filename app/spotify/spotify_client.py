@@ -41,13 +41,14 @@ class SpotifyClient:
 		self.client_secret = client_secret
 		self.scopes = scopes
 
-	def get_auth_redirect_url(self, redirect_url):
+	def get_auth_request(self, redirect_url):
 		"""
-		Gets the url for the Spotify authorization page (scopes, permissions, etc).
-		After authorization, the user is redirected to 'redirect_url' with auth code 
-		and	state as the query params.
-		:param redirect_url: the page to go to after authentication that must accept 
-		the authentication query parameters from Spotify. 
+		Gets the Spotify authentication url and parameters so that the user can 
+		approve scopes and permissions. If authentication is successful, Spotify
+		then makes a request to the redirect url with the access token as a query
+		parameter.
+		:param redirect_url: the page to go to after authentication that must 
+		accept authentication query parameters from Spotify. 
 		:return: the Spotify url string and a dict of query params to send. 
 		"""
 		query_params = {

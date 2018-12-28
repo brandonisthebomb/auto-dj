@@ -15,6 +15,7 @@ spotify = SpotifyClient(spotify_client_id, spotify_client_secret, scopes)
 
 @auth.route("/", methods=("GET", "POST"))
 def authenticate():
+   auth_url = spotify.get_auth_redirect_url
    return "This is the authentication endpoint!"
 
 @auth.route("/callback", methods=("GET", "POST"))
