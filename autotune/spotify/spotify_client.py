@@ -1,16 +1,15 @@
-"""
+'''
 A simple, lightweight Spotify client for Python.
 
 Created by Brandon Liu - brandon@virginia.edu
-"""
+'''
 
 import requests
 import logging
 import os
 
+from urllib.parse import urlencode
 from enum import Enum
-
-logger = logging.getLogger(__name__)
 
 class SpotifyClient:
 
@@ -28,7 +27,7 @@ class SpotifyClient:
 	AUTH_RESPONSE_TYPE = 'code'
 
 	# Grant Types
-	AUTH_GRANT = "authorization_code"
+	AUTH_GRANT = 'authorization_code'
 	REFRESH_GRANT = 'refresh_token'
 
 	def __init__(self, client_id, client_secret, scopes):
@@ -40,6 +39,7 @@ class SpotifyClient:
 		self.client_id = client_id
 		self.client_secret = client_secret
 		self.scopes = scopes
+		self._logger = logging.getLogger(__name__ + '.' + __class__.__name__)
 
 	def get_auth_request(self, redirect_url):
 		"""
@@ -49,7 +49,7 @@ class SpotifyClient:
 		parameter.
 		:param redirect_url: the page to go to after authentication that must 
 		accept authentication query parameters from Spotify. 
-		:return: the Spotify url string and a dict of query params to send. 
+		:return: the Spotify auth url and a dict of query params to send. 
 		"""
 		query_params = {
 			'client_id': self.client_id,
@@ -59,14 +59,15 @@ class SpotifyClient:
 			'show_dialog': 'true'
 		}
 		url = self._generate_request_url(self.AUTH_URL, self.AUTH_ENDPOINT)
-		logger.info("Authentication redirect url: %s" % url)
-		return url, query_params
+		url = url + '?' + urlencode(query_params) 
+		self._logger.debug('Spotify authentication url: %s' % url)
+		return url 
 
 	def get_access_token(self, auth_code, redirect_url):
 		"""
 		Gets the Spotify API access token required for making API calls, as well as the permanent
-		refresh token. The redirect_uri here is just for verification and doesn't actually
-		do anything.
+		refresh token. Redirect url here is just used for verification purposes and must be the 
+		same as the one used for requesting the authorization code.
 		:param auth_code: the auth code received from Spotify.
 		:return: the access token and the refresh token
 		"""
@@ -82,10 +83,10 @@ class SpotifyClient:
 		response = requests.post(url, query_params).json()
 
 		access_token = response['access_token']
-		logger.info('access token: %s', access_token)
+		self._logger.debug('access token: %s', access_token)
 
 		refresh_token = response['refresh_token']
-		logger.info('refresh token: %s', refresh_token)
+		self._logger.debug('refresh token: %s', refresh_token)
 
 		return response['access_token'], response['refresh_token']
 
@@ -104,11 +105,11 @@ class SpotifyClient:
 		}
 		response = requests.post(url, query_params).json()
 		access_token = response['access_token']
-		logger.info('refreshed access token: %s', access_token)
+		self._logger.debug('refreshed access token: %s', access_token)
 		return access_token
 								
 	def get_user_id(self, access_token):
-		"""
+		"""	
 		GET current users' Spotify ID
 		:param access_token:
 		:return: string with the user's Spotify ID
@@ -117,10 +118,10 @@ class SpotifyClient:
 		headers = {
 			'Authorization': 'Bearer ' + access_token
 		}
-
 		response = requests.get(url, headers=headers).json()
-
-		return response['id']
+		user_id = response['id']
+		self._logger.debug('User ID: %s' % user_id)
+		return user_id
 
 	def get_user_playlist_ids(self, access_token, limit=50, offset=0):
 		"""
@@ -142,7 +143,7 @@ class SpotifyClient:
 		response = requests.get(url, params=query_params, headers=headers).json()
 		json_items = response['items']
 		playlists = [json_playlist['id'] for json_playlist in json_items]
-		logger.info("got user's playlists: %s", playlists)
+		self._logger.debug('Got user\'s playlists: %s' %  playlists)
 		return playlists
 
 	def get_playlist(self, access_token, user_id, playlist_id):
